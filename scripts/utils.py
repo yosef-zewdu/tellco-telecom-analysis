@@ -5,52 +5,41 @@ from scipy.stats import zscore
 
 
 
+# Rename column 
+def rename_column(df):
+    try:
+        # Rename specific columns
+        df.rename(columns={'Dur. (ms)': 'Dur. (s)', 'Dur. (ms).1': 'Dur. (ms)'}, inplace=True)
+        print('renamed')
+        return df
+
+    except Exception as e:
+      print(f"An error occurred: {e}")
+      return None
+
+
 # Missing values 
-def missing_values(df):
-    # 1 - make the list of features which has missing values
-    features_with_na=[features for features in df.columns if df[features].isnull().sum()>1]
-    print(features_with_na)
-
-    # 2- print the feature name and the percentage of missing values
-    for feature in features_with_na:
-        print(feature, np.round(df[feature].isnull().mean()*100, 4),  ' % of missing values')
-
-
-# Incorrect_entries 
-def negative_values(df):
-    # Columns with negative value
-    columns_with_negatives = []
-
-    # Loop over each column
-    for column in df.columns:
-        if df[column].dtype != object:
-            if (df[column] < 0).any():  # Check if any value in the column is negative
-                columns_with_negatives.append(column)
-
-    # Print the list of columns with negative values
-    print(columns_with_negatives)
-
-
-
-
-
-####################################################################################
 def missing_values_table(df):
     # Total missing values
     mis_val = df.isnull().sum()
+
+    # Get the count of non-null values for each column
+    non_null_counts = df.notnull().sum()
 
     # Percentage of missing values
     mis_val_percent = 100 * df.isnull().sum() / len(df)
 
     # dtype of missing values
     mis_val_dtype = df.dtypes
-
+    
+    # missing values unique number
+    unique_counts = df.nunique()
     # Make a table with the results
-    mis_val_table = pd.concat([mis_val, mis_val_percent, mis_val_dtype], axis=1)
+    mis_val_table = pd.concat([mis_val, mis_val_percent, mis_val_dtype, non_null_counts, unique_counts], axis=1)
 
     # Rename the columns
     mis_val_table_ren_columns = mis_val_table.rename(
-    columns={0: 'Missing Values', 1: '% of Total Values', 2: 'Dtype'})
+    columns={0: 'Missing Values', 1: '% of Total Values', 2: 'Dtype',3: 'Values', 4: 'Unique Values'})
 
     # Sort the table by percentage of missing descending
     mis_val_table_ren_columns = mis_val_table_ren_columns[
@@ -61,31 +50,57 @@ def missing_values_table(df):
     print("Your selected dataframe has " + str(df.shape[1]) + " columns.\n"
           "There are " + str(mis_val_table_ren_columns.shape[0]) +
           " columns that have missing values.")
+    
 
     # Return the dataframe with missing information
     return mis_val_table_ren_columns
 
+# Non missing values 
+def non_missing_values_table(df):
+    # Identify non-missing value columns
+    non_missing_columns = df.columns[df.notnull().all()]
 
-# def format_float(value):
-#     return f'{value:,.2f}'
+    # Prepare data for the summary table
+    summary_data = {
+        'Column Name': [],
+        'Data Type': [],
+        'Total Values': [],
+        'Unique Values': []
+    }
+
+    # Populate the summary data
+    for column in non_missing_columns:
+        summary_data['Column Name'].append(column)
+        summary_data['Data Type'].append(df[column].dtype)
+        summary_data['Total Values'].append(len(df[column]))
+        summary_data['Unique Values'].append(df[column].nunique())
+
+    # Create a DataFrame from the summary data
+    summary_df = pd.DataFrame(summary_data)
+
+    # Print some summary information
+    print("Your selected DataFrame has " + str(df.shape[1]) + " columns.\n"
+          "There are " + str(summary_df.shape[0]) +
+          " columns that have no missing values.")
+
+    # Return the summary DataFrame
+    return summary_df
 
 
-# def find_agg(df: pd.DataFrame, agg_column: str, agg_metric: str, col_name: str, top: int, order=False) -> pd.DataFrame:
-#     new_df = df.groupby(agg_column)[agg_column].agg(agg_metric).reset_index(name=col_name). \
-#         sort_values(by=col_name, ascending=order)[:top]
-#     return new_df
 
-
+# Convert bytes to megabytes 
 def convert_bytes_to_megabytes(df, bytes_data):
-    megabyte = 1 * 10e+5
-    df[bytes_data] = df[bytes_data] / megabyte
+    df[bytes_data] = df[bytes_data] / 1024 /1024
     return df[bytes_data]
 
 
+# Fix outliers 
 def fix_outlier(df, column):
     df[column] = np.where(df[column] > df[column].quantile(0.95), df[column].median(), df[column])
     return df[column]
 
+
+# Remove outliers 
 def remove_outliers(df, column_to_process, z_threshold=3):
     # Apply outlier removal to the specified column
     z_scores = zscore(df[column_to_process])
@@ -97,5 +112,3 @@ def remove_outliers(df, column_to_process, z_threshold=3):
     df = df.drop(columns=[outlier_column], errors='ignore')
 
     return df
-    
-   

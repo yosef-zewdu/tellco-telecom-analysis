@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv('../.env')
 
 # Fetch database connection parameters from environment variables
 DB_HOST = os.getenv("DB_HOST")
@@ -70,3 +70,22 @@ def load_data_using_sqlalchemy(query):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
+    
+
+def load_data():
+
+    # Define your SQL query
+    query = "SELECT * FROM xdr_data;"  # Replace with your actual table name
+
+    # Load data from PostgreSQL using SQLAlchemy
+    df = load_data_using_sqlalchemy(query)
+
+    # Display the first few rows of the dataframe
+    if df is not None:
+        print("Successfully loaded the data")
+    else:
+        print("Failed to load data.")
+
+    # Set the option to display all columns
+    pd.set_option('display.max_columns', None)
+    return df 

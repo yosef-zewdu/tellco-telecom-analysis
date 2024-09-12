@@ -2,7 +2,6 @@ week2
 .env
 data
 .streamlit
-app
 .virtual_documents
 notebooks/.ipynb_checkpoints
 scripts/__pycache__/
